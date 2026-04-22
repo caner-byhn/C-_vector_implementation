@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <iostream>
 #include <cassert>
+#include <utility>
 
 namespace mytl {
 
@@ -21,6 +22,8 @@ namespace mytl {
         T operator[](const size_t idx);
         void push_back(const T &element);
         void erase(T *it);
+        void reserve(size_t n);
+        void resize(size_t n, const T &val = T{});
     };
 
     template<typename T>
@@ -54,7 +57,7 @@ namespace mytl {
         if (size >= capacity) {
             T *new_data = new T[capacity*2];
             for (size_t i = 0; i < size; i++) {
-                new_data[i] = data[i];
+                new_data[i] = std::move(data[i]);
             }
             delete[] data;
             data = new_data;
@@ -73,6 +76,45 @@ namespace mytl {
         }
         size--;
     }
+
+    template<typename T>
+    void vector<T>::reserve(size_t n) {
+        if (n <= capacity) return;
+        T *new_data = new T[n];
+        for (size_t i = 0; i < size; i++) {
+            new_data[i] = std::move(data[i]);
+        }
+        delete[] data;
+        data = new_data;
+        capacity = n;
+    }
+
+    template<typename T>
+    void vector<T>::resize(size_t n, const T &val) {
+        if (n < size) {
+            for (size_t i = n; i < size; i++) {
+                data[i].~T();
+            }
+            size = n;
+        }
+        else if (n > size) {
+            T *new_data = new T[n];
+            for (size_t i = 0; i < size; i++) {
+                new_data[i] = std::move(data[i]);
+            }
+            delete[] data;
+            data = new_data;
+            capacity = n;
+
+            for (size_t i = size; i < n; i++) {
+                new (&data[i]) T(val);
+            }
+            size = n;
+        }
+
+        return;
+    }
+
 
 }
 

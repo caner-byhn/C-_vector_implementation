@@ -5,10 +5,11 @@
 int main(int argc, char *argv[]) {
     mytl::vector<int> v1;
 
-    v1.push_back(10);
-    std::cout << v1[0] << "\n";
-    v1.erase(v1.begin());
-    std::cout << v1[0];
+    v1.resize(10);
+
+    for (int i = 0; i < 10; i++) {
+        std::cout << v1[i] << " ";
+    }
 
     return 0;
 }
