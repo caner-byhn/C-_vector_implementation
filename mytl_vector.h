@@ -53,7 +53,7 @@ namespace mytl {
     void vector<T>::push_back(const T &element) {
         if (size >= capacity) {
             T *new_data = new T[capacity*2];
-            for ( size_t i = 0; i < size; i++ ) {
+            for (size_t i = 0; i < size; i++) {
                 new_data[i] = data[i];
             }
             delete[] data;
