@@ -7,7 +7,7 @@ int main(int argc, char *argv[]) {
 
     v1.resize(10);
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < v1.len(); i++) {
         std::cout << v1[i] << " ";
     }
 
