@@ -5,9 +5,10 @@
 int main(int argc, char *argv[]) {
     mytl::vector<int> v1;
 
+    v1.resize(20);
     v1.resize(10);
 
-    for (int i = 0; i < v1.len(); i++) {
+    for (int i = 0; i < v1.len() + 350; i++) {
         std::cout << v1[i] << " ";
     }
 

@@ -36,7 +36,10 @@ namespace mytl {
 
     template<typename T>
     vector<T>::~vector() {
-        delete[] data;
+        for (size_t i = 0; i < size; i++) {
+            alloc.destroy(data + i);
+        }
+        alloc.deallocate(data, capacity);
     }
 
     template<typename T>
@@ -113,18 +116,30 @@ namespace mytl {
             size = n;
         }
         else if (n > size) {
-            T *new_data = alloc.allocate(n);
-            for (size_t i = 0; i < size; i++) {
-                alloc.construct(new_data + i, std::move(data[i]));
+            if (n > capacity) {
+                size_t new_cap = capacity;
+                while (new_cap < n) {
+                    new_cap *= 2;
+                }
+
+                T *new_data = alloc.allocate(new_cap);
+                for (size_t i = 0; i < size; i++) {
+                    alloc.construct(new_data + i, std::move(data[i]));
+                }
+                for (size_t i = 0; i < size; i++) {
+                    alloc.destroy(data + i);
+                }
+                if (data != nullptr) alloc.deallocate(data, capacity);
+                data = new_data;
+                capacity = new_cap;
+                for (size_t i = size; i < n; i++) {
+                    alloc.construct(data + i, val);
+                }
             }
-            for (size_t i = 0; i < size; i++) {
-                alloc.destroy(data + i);
-            }
-            if (data != nullptr) alloc.deallocate(data, capacity);
-            data = new_data;
-            capacity = n;
-            for (size_t i = size; i < n; i++) {
-                alloc.construct(data + i, val);
+            else {
+                for (size_t i = size; i < n; i++) {
+                    alloc.construct(data + i, val);
+                }
             }
             size = n;
         }
