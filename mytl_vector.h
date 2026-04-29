@@ -19,6 +19,7 @@ namespace mytl {
     public:
         vector();
         ~vector();
+        vector(const vector &other);
         T *begin();
         T *end();
         T &operator[](const size_t idx);
@@ -30,16 +31,26 @@ namespace mytl {
     };
 
     template<typename T>
-    vector<T>::vector() : capacity(256), size(0){
-        data = alloc.allocate(capacity);
-    }
+    vector<T>::vector() : data(nullptr), capacity(0), size(0) { }
 
     template<typename T>
     vector<T>::~vector() {
         for (size_t i = 0; i < size; i++) {
-            alloc.destroy(data + i);
+            std::destroy_at(data + i);
         }
         alloc.deallocate(data, capacity);
+    }
+
+    template<typename T>
+    vector<T>::vector(const vector &other) : capacity(other.capacity), size(other.size) {
+        if (other.data == nullptr) {
+            data = nullptr;
+            return;
+        }
+        data = alloc.allocate(capacity);
+        for (size_t i = 0; i < size; i++) {
+            std::construct_at(data + i, other.data[i]);
+        }
     }
 
     template<typename T>
@@ -66,29 +77,30 @@ namespace mytl {
     template<typename T>
     void vector<T>::push_back(const T &element) {
         if (size >= capacity) {
-            T *new_data = alloc.allocate(capacity * 2);
+            size_t new_cap = capacity == 0 ? 1 : capacity * 2;
+            T *new_data = alloc.allocate(new_cap);
             for (size_t i = 0; i < size; i++) {
-                alloc.construct(new_data + i, std::move(data[i]));
+                std::construct_at(new_data + i, std::move(data[i]));
             }
             for (size_t i = 0; i < size; i++) {
-                alloc.destroy(data + i);
+                std::destroy_at(data + i);
             }
             if (data != nullptr) alloc.deallocate(data, capacity);
             data = new_data;
-            capacity *= 2;
+            capacity = new_cap;
         }
-        alloc.construct(data + size, element);
+        std::construct_at(data + size, element);
         size++;
     }
 
     template<typename T>
     void vector<T>::erase(T *it) {
-        size_t idx = it - data;
         if (it < begin() || it >= end()) return;
+        size_t idx = it - data;
         for (size_t i = idx; i < size - 1; i++) {
-            data[i] = data[i+1];
+            data[i] = std::move(data[i+1]);
         }
-        alloc.destroy(data + size - 1);
+        std::destroy_at(data + size - 1);
         size--;
     }
 
@@ -97,10 +109,10 @@ namespace mytl {
         if (n <= capacity) return;
         T *new_data = alloc.allocate(n);
         for (size_t i = 0; i < size; i++) {
-            alloc.construct(new_data + i, std::move(data[i]));
+            std::construct_at(new_data + i, std::move(data[i]));
         }
         for (size_t i = 0; i < size; i++) {
-            alloc.destroy(data + i);
+            std::destroy_at(data + i);
         }
         if (data != nullptr) alloc.deallocate(data, capacity);
         data = new_data;
@@ -111,12 +123,13 @@ namespace mytl {
     void vector<T>::resize(size_t n, const T &val) {
         if (n < size) {
             for (size_t i = n; i < size; i++) {
-                alloc.destroy(data + i);
+                std::destroy_at(data + i);
             }
             size = n;
         }
         else if (n > size) {
             if (n > capacity) {
+                if (capacity == 0) capacity = 1;
                 size_t new_cap = capacity;
                 while (new_cap < n) {
                     new_cap *= 2;
@@ -124,21 +137,21 @@ namespace mytl {
 
                 T *new_data = alloc.allocate(new_cap);
                 for (size_t i = 0; i < size; i++) {
-                    alloc.construct(new_data + i, std::move(data[i]));
+                    std::construct_at(new_data + i, std::move(data[i]));
                 }
                 for (size_t i = 0; i < size; i++) {
-                    alloc.destroy(data + i);
+                    std::destroy_at(data + i);
                 }
                 if (data != nullptr) alloc.deallocate(data, capacity);
                 data = new_data;
                 capacity = new_cap;
                 for (size_t i = size; i < n; i++) {
-                    alloc.construct(data + i, val);
+                    std::construct_at(data + i, val);
                 }
             }
             else {
                 for (size_t i = size; i < n; i++) {
-                    alloc.construct(data + i, val);
+                   std::construct_at(data + i, val);
                 }
             }
             size = n;
